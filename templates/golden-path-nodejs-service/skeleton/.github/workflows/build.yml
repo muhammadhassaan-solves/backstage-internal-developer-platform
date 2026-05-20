@@ -1,0 +1,63 @@
+name: build-and-gitops
+on:
+  push:
+    branches:
+      - main
+# FOR PRODUCTION ENVIRONMENT, PLEASE USE GITHUB SECERTS INSTEAD OF HARDCODING THEM.
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout app repo
+        uses: actions/checkout@v4
+
+      - name: Set environment variables
+        run: |
+          echo "REPO_NAME=$(basename $(pwd))" >> $GITHUB_ENV
+          echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "IMAGE=GITHUB_USERNAME/$(basename $(pwd)):$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Login to Docker Hub
+        run: |
+          echo "DOCKER_PAT" | docker login -u DOCKER_USERNAME --password-stdin
+
+      - name: Build Docker image
+        run: |
+          echo "Building: $IMAGE"
+          docker build -t $IMAGE .
+          docker tag $IMAGE DOCKER_USERNAME/$REPO_NAME:latest
+
+      - name: Push Docker image
+        run: |
+          echo "Pushing: $IMAGE"
+          docker push $IMAGE
+          docker push DOCKER_USERNAME/$REPO_NAME:latest
+
+      - name: Clone GitOps repo
+        run: |
+          git clone https://GITHUB_USERNAME:GITHUB_TOKEN@github.com/GITHUB_USERNAME/gitops-repo.git gitops
+
+      - name: Create service folder in GitOps repo
+        run: |
+          mkdir -p gitops/apps/$REPO_NAME
+
+      - name: Update deployment.yaml
+        run: |
+          sed "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/deployment.yaml > gitops/apps/$REPO_NAME/deployment.yaml
+
+      - name: Copy service.yaml
+        run: |
+          cp k8s/service.yaml gitops/apps/$REPO_NAME/service.yaml
+
+      - name: Commit & Push to GitOps repo
+        run: |
+          cd gitops
+          git config user.name "ci-bot"
+          git config user.email "ci@bot.local"
+          git add .
+          if git diff --staged --quiet; then
+            echo "✓ No changes to commit"
+          else
+            git commit -m "deploy: $REPO_NAME - $GIT_SHA"
+            git push origin main
+          fi

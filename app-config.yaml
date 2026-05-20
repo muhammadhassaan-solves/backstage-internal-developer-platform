@@ -1,0 +1,124 @@
+app:
+  title: Scaffolded Backstage App
+  baseUrl: http://localhost:3000
+
+  # Enable all packages by default, this will discover packages from packages/app/package.json
+  packages: all
+
+  extensions:
+    # Disable the nav items that we're manually rendering in packages/app/src/modules/nav/Sidebar.tsx
+    - entity-content:kubernetes/kubernetes
+    - nav-item:search: false
+    - nav-item:user-settings: false
+    - nav-item:catalog: false
+    - nav-item:scaffolder: false
+
+    # Configure the catalog index page to be the root page, this is normally mounted on /catalog
+    - page:catalog:
+        config:
+          path: /
+
+organization:
+  name: My Company
+
+backend:
+  baseUrl: http://localhost:7007
+  listen:
+    port: 7007
+  csp:
+    connect-src: ["'self'", 'http:', 'https:']
+  cors:
+    origin: http://localhost:3000
+    methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+    credentials: true
+  database:
+    client: better-sqlite3
+    connection: ':memory:'
+  actions:
+    pluginSources:
+      - auth
+      - catalog
+      - scaffolder
+
+integrations:
+  github:
+    - host: github.com
+      token: GITHUB_PAT
+
+#  gitea:
+#    - host: localhost:3001
+#      baseUrl: http://localhost:3001
+#      apiBaseUrl: http://localhost:3001/api/v1
+#      username: USER_NAME
+#      token: GITEA_PAT
+
+techdocs:
+  builder: 'local'
+  generator:
+    runIn: 'docker'
+  publisher:
+    type: 'local'
+
+auth:
+  providers:
+    guest: {}
+  experimentalClientIdMetadataDocuments:
+    enabled: false
+
+scaffolder:
+  defaultAuthor:
+    name: Backstage Scaffolder
+    email: scaffolder@example.com
+  defaultCommitMessage: "Initial commit from Backstage"
+
+catalog:
+  import:
+    entityFilename: catalog-info.yaml
+    pullRequestBranchName: backstage-integration
+  rules:
+    - allow: [Component, System, API, Resource, Location, Template, Group]
+
+  # GitHub Discovery Provider
+  providers:
+    github:
+      default:
+        organization: 'GITHUB_USERNAME'
+        catalogPath: '/catalog-info.yaml'
+        filters:
+          branch: 'main'
+          repository: '.*'
+        schedule:
+          frequency: { minutes: 30 }
+          timeout: { minutes: 3 }
+
+  locations:
+    # Local Templates
+
+    - type: file
+      target: ~/backstage/templates/golden-path-nodejs-service/template.yaml
+      rules:
+        - allow: [Template]
+
+    - type: file
+      target: ~/backstage/packages/backend/catalog/groups.yaml
+      rules:
+        - allow: [Group]
+
+kubernetes:
+  serviceLocatorMethod:
+    type: multiTenant
+  clusterLocatorMethods:
+    - type: config
+      clusters:
+        - name: kind-cluster
+          url: https://127.0.0.1:38379
+          authProvider: serviceAccount
+          serviceAccountToken: TOKEN_HERE
+          skipTLSVerify: true
+
+permission:
+  enabled: true
+
+mcpActions:
+  name: 'My Company Backstage'
+  description: 'Tools for managing your software catalog, creating new services from templates, and exploring your developer portal'

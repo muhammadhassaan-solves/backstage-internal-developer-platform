@@ -1,0 +1,80 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: golden-path-nodejs-service
+  title: Node.js Backend Service
+  description: Create a production-ready Node.js microservice
+  tags:
+    - nodejs
+    - backend
+    - docker
+spec:
+  owner: group:default/platform-team
+  type: service
+
+  parameters:
+    - title: Service Details
+      required:
+        - name
+        - owner
+        - lifecycle
+      properties:
+
+        name:
+          title: Service Name
+          type: string
+          pattern: '^[a-z0-9-]+$'
+          description: 'Lowercase with hyphens (e.g. payment-service, user-api)'
+
+        description:
+          title: Description
+          type: string
+          description: 'What does this service do?'
+
+        owner:
+          title: Team Owner
+          type: string
+          enum: [alpha, beta, gamma]
+          enumNames: ['Alpha Team', 'Beta Team', 'Gamma Team']
+
+        lifecycle:
+          title: Lifecycle
+          type: string
+          enum: [development, staging, production]
+          default: production
+
+  steps:
+    - id: fetch
+      name: Generate Project
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          lifecycle: ${{ parameters.lifecycle }}
+
+    - id: publish-github
+      name: Create GitHub Repository
+      action: publish:github
+      input:
+        description: ${{ parameters.description }}
+        repoUrl: github.com?owner=muhammadhassaan-solves&repo=${{ parameters.name }}
+        defaultBranch: main
+        repoVisibility: private
+        gitAuthorName: Backstage Scaffolder
+        gitAuthorEmail: scaffolder@example.com
+
+    - id: register
+      name: Register in Catalog
+      action: catalog:register
+      input:
+        catalogInfoUrl: ${{ steps['publish-github'].output.repoContentsUrl }}/catalog-info.yaml
+
+  output:
+    links:
+      - title: GitHub Repository
+        url: ${{ steps['publish-github'].output.remoteUrl }}
+      - title: Open in Catalog
+        url: /catalog/default/component/${{ parameters.name }}

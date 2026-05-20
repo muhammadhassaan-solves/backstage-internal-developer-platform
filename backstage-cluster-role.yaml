@@ -1,0 +1,49 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: backstage-cluster-role
+rules:
+  # Core resources
+  - apiGroups: [""]
+    resources:
+      - pods
+      - services
+      - configmaps
+      - namespaces
+      - limitranges
+      - resourcequotas
+    verbs: ["get", "list", "watch"]
+
+  # Apps workloads
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+      - statefulsets
+      - daemonsets
+    verbs: ["get", "list", "watch"]
+
+  # Batch workloads
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["get", "list", "watch"]
+
+  # Networking
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch"]
+
+  # Autoscaling
+  - apiGroups: ["autoscaling"]
+    resources:
+      - horizontalpodautoscalers
+    verbs: ["get", "list", "watch"]
+
+  # Metrics (important for Backstage health graphs)
+  - apiGroups: ["metrics.k8s.io"]
+    resources:
+      - pods
+    verbs: ["get", "list", "watch"]
