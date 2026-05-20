@@ -60,7 +60,7 @@ spec:
       action: publish:github
       input:
         description: ${{ parameters.description }}
-        repoUrl: github.com?owner=muhammadhassaan-solves&repo=${{ parameters.name }}
+        repoUrl: github.com?owner=github_username&repo=${{ parameters.name }}
         defaultBranch: main
         repoVisibility: private
         gitAuthorName: Backstage Scaffolder
