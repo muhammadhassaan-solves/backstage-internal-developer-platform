@@ -1,4 +1,4 @@
-# Internal Developer Platform — Backstage Golden Path
+# Internal Developer Platform 
 
 **Reducing new service setup time from a 3-days to under 60 seconds** while improving standardization, documentation, and developer experience across engineering teams.
 
